@@ -28,7 +28,6 @@ app.prepend(titleElement); // prepend to keep on top
 
 let isDrawing = false;
 
-// Define the Point interface
 interface Point {
     x: number;
     y: number;
@@ -37,36 +36,40 @@ interface Point {
 let currentStroke: Point[] = []; // Current stroke being drawn
 let strokes: Point[][] = []; // All strokes
 
-// Custom event for drawing changes
-const drawingChangedEvent = new Event("drawing-changed");
+const drawingChanged = new Event("drawing-changed");
 
 // Drawing
 if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         isDrawing = true;
-        currentStroke = []; // clear
-        addPoint(event.offsetX, event.offsetY); // Add the starting point
+        currentStroke = [];
+        addPoint(event.offsetX, event.offsetY);
     });
 
     // Draw
     canvas.addEventListener("mousemove", (event) => {
         if (!isDrawing) return;
-        addPoint(event.offsetX, event.offsetY); // Add new point
-        canvas.dispatchEvent(drawingChangedEvent); // Notify that drawing has changed
+        addPoint(event.offsetX, event.offsetY);
+        canvas.dispatchEvent(drawingChanged);
     });
 
     // Stop drawing
     canvas.addEventListener("mouseup", () => {
-        isDrawing = false;
         if (currentStroke.length > 0) {
-            strokes.push(currentStroke); // Save the stroke
+            strokes.push(currentStroke);
         }
+        isDrawing = false;
+        currentStroke = [];
     });
 
     // Off canvas
     canvas.addEventListener("mouseleave", () => {
+        if (currentStroke.length > 0) {
+            strokes.push(currentStroke);
+        }
         isDrawing = false;
+        currentStroke = [];
     });
 }
 
@@ -78,7 +81,6 @@ function addPoint(x: number, y: number) {
 // Redraw the canvas
 function redraw() {
     if (!ctx) return; // Check if ctx is not null
-
     ctx.fillStyle = canvasColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
@@ -104,7 +106,7 @@ function redraw() {
     }
 }
 
-// Observer for the "drawing-changed" event
+// Observer
 canvas.addEventListener("drawing-changed", redraw);
 
 // Clear button
@@ -115,7 +117,46 @@ clearButton.addEventListener("click", () => {
         ctx.fillStyle = canvasColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         strokes = []; // Clear strokes
+        currentStroke = []; // Clear current stroke
     }
 });
 app.appendChild(clearButton);
 
+// Undo button
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+undoButton.addEventListener("click", () => {
+    if (isDrawing) { // if the user is drawing, throw it away
+        currentStroke = [];
+        isDrawing = false;
+    } else if (strokes.length > 0) {
+        let lastStroke = strokes.pop();
+        if (lastStroke !== undefined) {
+            redoStack.push(lastStroke); // Push undo to redo stack
+        }
+    }
+    canvas.dispatchEvent(drawingChanged);
+});
+app.appendChild(undoButton);
+
+
+
+
+// Redo button
+
+let redoStack: Point[][] = [];
+const redoButton = document.createElement("button");
+redoButton.textContent = "Redo";
+redoButton.addEventListener("click", () => {
+    if (isDrawing) { // if user is drawing, throw it away
+        currentStroke = [];
+        isDrawing = false;
+    } else if (redoStack.length > 0) {
+        let lastRedo = redoStack.pop();
+        if (lastRedo !== undefined) {
+            strokes.push(lastRedo);
+        }
+    }
+    canvas.dispatchEvent(drawingChanged);
+});
+app.appendChild(redoButton);
