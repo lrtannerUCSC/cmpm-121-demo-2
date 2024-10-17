@@ -130,7 +130,7 @@ undoButton.addEventListener("click", () => {
         currentStroke = [];
         isDrawing = false;
     } else if (strokes.length > 0) {
-        let lastStroke = strokes.pop();
+        const lastStroke = strokes.pop();
         if (lastStroke !== undefined) {
             redoStack.push(lastStroke); // Push undo to redo stack
         }
@@ -139,12 +139,8 @@ undoButton.addEventListener("click", () => {
 });
 app.appendChild(undoButton);
 
-
-
-
 // Redo button
-
-let redoStack: Point[][] = [];
+const redoStack: Point[][] = [];
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
 redoButton.addEventListener("click", () => {
@@ -152,7 +148,7 @@ redoButton.addEventListener("click", () => {
         currentStroke = [];
         isDrawing = false;
     } else if (redoStack.length > 0) {
-        let lastRedo = redoStack.pop();
+        const lastRedo = redoStack.pop();
         if (lastRedo !== undefined) {
             strokes.push(lastRedo);
         }
