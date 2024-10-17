@@ -118,3 +118,4 @@ clearButton.addEventListener("click", () => {
     }
 });
 app.appendChild(clearButton);
+
