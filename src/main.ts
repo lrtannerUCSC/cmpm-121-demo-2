@@ -26,6 +26,7 @@ titleElement.textContent = APP_NAME;
 titleElement.style.marginBottom = "20px";
 app.prepend(titleElement); // prepend to keep on top
 
+// Drawing
 let isDrawing = false;
 
 interface Point {
@@ -33,49 +34,65 @@ interface Point {
     y: number;
 }
 
-let currentStroke: Point[] = []; // Current stroke being drawn
-let strokes: Point[][] = []; // All strokes
+class Stroke {
+    private points: Point[] = []; // Points of current stroke
+
+    constructor(initX: number, initY: number){ // Starts making line
+        this.points.push({x: initX, y: initY}); // Push initial coords to list
+    }
+
+    addPoint(x: number, y: number): void{ // Add new point to line
+        this.points.push({x, y});
+    }
+
+    display(ctx: CanvasRenderingContext2D): void{
+        if (this.points.length > 0){
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for (const point of this.points){
+                ctx.lineTo(point.x, point.y);
+            }
+            ctx.stroke();
+        }
+    }
+}
+
+let currentStroke: Stroke | null = null; // Current stroke being drawn
+let strokes: Stroke[] = []; // All strokes
 
 const drawingChanged = new Event("drawing-changed");
 
-// Drawing
 if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         isDrawing = true;
-        currentStroke = [];
-        addPoint(event.offsetX, event.offsetY);
+        currentStroke = new Stroke(event.offsetX, event.offsetY); // Create new stroke
     });
 
     // Draw
     canvas.addEventListener("mousemove", (event) => {
         if (!isDrawing) return;
-        addPoint(event.offsetX, event.offsetY);
+        currentStroke?.addPoint(event.offsetX, event.offsetY);
         canvas.dispatchEvent(drawingChanged);
     });
 
     // Stop drawing
     canvas.addEventListener("mouseup", () => {
-        if (currentStroke.length > 0) {
+        if (currentStroke) {
             strokes.push(currentStroke);
+            currentStroke = null;
         }
         isDrawing = false;
-        currentStroke = [];
     });
 
     // Off canvas
     canvas.addEventListener("mouseleave", () => {
-        if (currentStroke.length > 0) {
+        if (currentStroke) {
             strokes.push(currentStroke);
+            currentStroke = null;
         }
         isDrawing = false;
-        currentStroke = [];
     });
-}
-
-// Function to add a point
-function addPoint(x: number, y: number) {
-    currentStroke.push({ x, y });
 }
 
 // Redraw the canvas
@@ -87,22 +104,12 @@ function redraw() {
     // Redraw all complete strokes
     ctx.strokeStyle = "black"; // Set stroke color
     for (const stroke of strokes) {
-        ctx.beginPath();
-        ctx.moveTo(stroke[0].x, stroke[0].y);
-        for (const point of stroke) {
-            ctx.lineTo(point.x, point.y);
-        }
-        ctx.stroke();
+        stroke.display(ctx); // Display every stroke on the ctx (screen)
     }
 
     // Draw the current stroke being drawn
-    if (currentStroke.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
-        for (const point of currentStroke) {
-            ctx.lineTo(point.x, point.y);
-        }
-        ctx.stroke();
+    if (currentStroke) {
+        currentStroke.display(ctx); // Display currentStroke if exists
     }
 }
 
@@ -117,7 +124,8 @@ clearButton.addEventListener("click", () => {
         ctx.fillStyle = canvasColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         strokes = []; // Clear strokes
-        currentStroke = []; // Clear current stroke
+        redoStack = [];
+        currentStroke = null; // Clear current stroke
     }
 });
 app.appendChild(clearButton);
@@ -127,11 +135,11 @@ const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
 undoButton.addEventListener("click", () => {
     if (isDrawing) { // if the user is drawing, throw it away
-        currentStroke = [];
+        currentStroke = null;
         isDrawing = false;
     } else if (strokes.length > 0) {
         const lastStroke = strokes.pop();
-        if (lastStroke !== undefined) {
+        if (lastStroke) {
             redoStack.push(lastStroke); // Push undo to redo stack
         }
     }
@@ -140,12 +148,12 @@ undoButton.addEventListener("click", () => {
 app.appendChild(undoButton);
 
 // Redo button
-const redoStack: Point[][] = [];
+let redoStack: Stroke[] = [];
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
 redoButton.addEventListener("click", () => {
     if (isDrawing) { // if user is drawing, throw it away
-        currentStroke = [];
+        currentStroke = null;
         isDrawing = false;
     } else if (redoStack.length > 0) {
         const lastRedo = redoStack.pop();
