@@ -36,9 +36,11 @@ interface Point {
 
 class Stroke {
     private points: Point[] = []; // Points of current stroke
+    private lineWidth: number;
 
-    constructor(initX: number, initY: number){ // Starts making line
+    constructor(initX: number, initY: number, lineWidth: number){ // Starts making line
         this.points.push({x: initX, y: initY}); // Push initial coords to list
+        this.lineWidth = lineWidth;
     }
 
     addPoint(x: number, y: number): void{ // Add new point to line
@@ -47,6 +49,7 @@ class Stroke {
 
     display(ctx: CanvasRenderingContext2D): void{
         if (this.points.length > 0){
+            ctx.lineWidth = this.lineWidth;
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
             for (const point of this.points){
@@ -66,7 +69,7 @@ if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         isDrawing = true;
-        currentStroke = new Stroke(event.offsetX, event.offsetY); // Create new stroke
+        currentStroke = new Stroke(event.offsetX, event.offsetY, currentMarkerThickness); // Create new stroke
     });
 
     // Draw
@@ -164,3 +167,23 @@ redoButton.addEventListener("click", () => {
     canvas.dispatchEvent(drawingChanged);
 });
 app.appendChild(redoButton);
+
+
+
+let currentMarkerThickness = 2; // Default thin
+
+// Thin Marker Button
+const thinMarkerButton = document.createElement("button");
+thinMarkerButton.textContent = "Thin";
+thinMarkerButton.addEventListener("click", () => {
+    currentMarkerThickness = 2;
+});
+app.appendChild(thinMarkerButton);
+
+//Thick Marker Button
+const thickMarkerButton = document.createElement("button");
+thickMarkerButton.textContent = "Thick";
+thickMarkerButton.addEventListener("click", () => {
+    currentMarkerThickness = 10;
+});
+app.appendChild(thickMarkerButton);
