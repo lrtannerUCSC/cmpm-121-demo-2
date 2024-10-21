@@ -381,3 +381,38 @@ app.appendChild(customStickerButton);
 
 // Initial setup to create the sticker buttons
 createStickerButtons();
+
+
+// Export Button
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+exportButton.addEventListener("click", () => {
+    
+    // Create a new canvas for export
+    const exportCanvas = document.createElement("canvas");
+    const exportCanvasWidth = 1024;
+    const exportCanvasHeight = 1024;
+    const exportCanvasColor = "white";
+    exportCanvas.width = exportCanvasWidth;
+    exportCanvas.height = exportCanvasHeight;
+
+    const exportCtx = exportCanvas.getContext("2d");
+    if (exportCtx) {
+        exportCtx.fillStyle = exportCanvasColor; // Fill the new canvas with white background
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+        // Scale the context to match the original canvas
+        exportCtx.scale(4, 4);
+
+        for (const stroke of strokes) {
+            stroke.display(exportCtx); // Use existing display method
+        }
+
+        // Create a link element to trigger the download
+        const link = document.createElement("a");
+        link.download = "drawing.png";
+        link.href = exportCanvas.toDataURL("image/png"); // Get the PNG data URL
+        link.click(); // Trigger the download
+    }
+});
+app.appendChild(exportButton);
