@@ -26,6 +26,39 @@ titleElement.textContent = APP_NAME;
 titleElement.style.marginBottom = "20px";
 app.prepend(titleElement); // prepend to keep on top
 
+let currentToolPreview: ToolPreview | null;
+
+// ToolPreview
+class ToolPreview {
+    private lineWidth: number;
+    private x: number;
+    private y: number;
+
+    constructor(initX: number, initY: number, lineWidth: number){ // Starts making line
+        this.x = initX;
+        this.y = initY;
+        this.lineWidth = lineWidth;
+    }
+
+    updatePosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+    }
+
+    updateLineWidth(lineWidth: number){
+        this.lineWidth = lineWidth;
+    }
+
+    draw(ctx: CanvasRenderingContext2D): void {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.lineWidth / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 // Drawing
 let isDrawing = false;
 
@@ -69,14 +102,23 @@ if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         isDrawing = true;
-        currentStroke = new Stroke(event.offsetX, event.offsetY, currentMarkerThickness); // Create new stroke
+        currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth); // Create new stroke
+        canvas.dispatchEvent(new Event("drawing-changed"));
     });
 
     // Draw
     canvas.addEventListener("mousemove", (event) => {
-        if (!isDrawing) return;
-        currentStroke?.addPoint(event.offsetX, event.offsetY);
-        canvas.dispatchEvent(drawingChanged);
+        if (isDrawing) {  // While drawing update stroke with new points
+            currentStroke?.addPoint(event.offsetX, event.offsetY);
+            redraw();  // Trigger redraw immediately to show the stroke
+        } else {  // When not drawing update the tool preview position
+            if (!currentToolPreview) {
+                currentToolPreview = new ToolPreview(event.offsetX, event.offsetY, currentLineWidth);
+            } else {
+                currentToolPreview.updatePosition(event.offsetX, event.offsetY);
+            }
+            canvas.dispatchEvent(new Event("tool-moved"));
+        }
     });
 
     // Stop drawing
@@ -86,6 +128,7 @@ if (ctx) {
             currentStroke = null;
         }
         isDrawing = false;
+        canvas.dispatchEvent(new Event("drawing-changed"));
     });
 
     // Off canvas
@@ -114,10 +157,16 @@ function redraw() {
     if (currentStroke) {
         currentStroke.display(ctx); // Display currentStroke if exists
     }
+
+    // Draw tool preview if not currently drawing
+    if (!isDrawing && currentToolPreview) {
+        currentToolPreview.draw(ctx);
+    }
 }
 
 // Observer
 canvas.addEventListener("drawing-changed", redraw);
+canvas.addEventListener("tool-moved", redraw);
 
 // Clear button
 const clearButton = document.createElement("button");
@@ -168,22 +217,37 @@ redoButton.addEventListener("click", () => {
 });
 app.appendChild(redoButton);
 
-
-
-let currentMarkerThickness = 2; // Default thin
+let currentLineWidth = 2; // Default thin
 
 // Thin Marker Button
 const thinMarkerButton = document.createElement("button");
 thinMarkerButton.textContent = "Thin";
 thinMarkerButton.addEventListener("click", () => {
-    currentMarkerThickness = 2;
+    currentLineWidth = 2;
+    if (currentToolPreview) { // Update tool preview size
+        currentToolPreview.updateLineWidth(currentLineWidth);
+    }
 });
 app.appendChild(thinMarkerButton);
 
-//Thick Marker Button
+// Thick Marker Button
 const thickMarkerButton = document.createElement("button");
 thickMarkerButton.textContent = "Thick";
 thickMarkerButton.addEventListener("click", () => {
-    currentMarkerThickness = 10;
+    currentLineWidth = 10;
+    if (currentToolPreview) { // Update tool preview size
+        currentToolPreview.updateLineWidth(currentLineWidth);
+    }
 });
 app.appendChild(thickMarkerButton);
+
+// Mega Thick Marker Button
+const megaThickMarkerButton = document.createElement("button");
+megaThickMarkerButton.textContent = "Mega Thick";
+megaThickMarkerButton.addEventListener("click", () => {
+    currentLineWidth = 50;
+    if (currentToolPreview) { // Update tool preview size
+        currentToolPreview.updateLineWidth(currentLineWidth);
+    }
+});
+app.appendChild(megaThickMarkerButton);
