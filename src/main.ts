@@ -28,8 +28,7 @@ app.prepend(titleElement); // prepend to keep on top
 
 let currentToolPreview: ToolPreview | null;
 let currentStickerPreview: StickerPreview | null;
-let placedStickers: StickerPreview[] = []; // Store placed stickers
-let draggingSticker: StickerPreview | null = null; // Currently dragged sticker
+let draggingSticker: Stroke | null = null; // Currently dragged sticker
 
 // See size of brush at mouse location
 class ToolPreview {
@@ -89,6 +88,7 @@ class StickerPreview {
             ctx.font = `${fontSize}px sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
+            ctx.fillStyle = "black";
 
             // Draw the sticker at the given position
             ctx.fillText(this.sticker, this.x, this.y);
@@ -110,18 +110,48 @@ interface Point {
 class Stroke {
     private points: Point[] = [];
     private lineWidth: number; // Thickness of brush
+    private sticker: string | null;
+    private position: Point | null;
 
-    constructor(initX: number, initY: number, lineWidth: number) {
-        this.points.push({ x: initX, y: initY });
-        this.lineWidth = lineWidth;
+    constructor(initX: number, initY: number, lineWidth: number, sticker: string | null = null) {
+        if (sticker) {
+            // If it's a sticker stroke
+            this.sticker = sticker;
+            this.position = { x: initX, y: initY };
+            this.lineWidth = 0;
+        } else {
+            // If it's a drawing stroke
+            this.points.push({ x: initX, y: initY });
+            this.lineWidth = lineWidth;
+            this.sticker = null;
+            this.position = null;
+        }
+    }
+
+    updatePosition(x: number, y: number) {
+        if (this.points.length < 1)
+            this.position = { x: x, y: y }
     }
 
     addPoint(x: number, y: number): void {
-        this.points.push({ x, y });
+        if (!this.sticker) {
+            this.points.push({ x, y });
+        }
     }
 
     display(ctx: CanvasRenderingContext2D): void {
-        if (this.points.length > 0) {
+        if (this.sticker && this.position) {
+            // Draw sticker if this stroke represents a sticker
+            ctx.save();
+            const fontSize = 30;
+            ctx.font = `${fontSize}px sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "black";
+            ctx.fillText(this.sticker, this.position.x, this.position.y);
+            ctx.restore();
+        } else if (this.points.length > 0) {
+            // Draw a normal stroke
             ctx.lineWidth = this.lineWidth;
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -141,12 +171,11 @@ if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         if (currentSticker) {
-            // Place a sticker at the current position
-            const stickerCmd = new StickerPreview(event.offsetX, event.offsetY, currentSticker);
-            placedStickers.push(stickerCmd); // Store the placed sticker
+            const stickerStroke = new Stroke(event.offsetX, event.offsetY, 0, currentSticker);
+            strokes.push(stickerStroke);
             currentSticker = null;
             currentStickerPreview = null;
-            draggingSticker = stickerCmd; // Start dragging the newly placed sticker
+            draggingSticker = stickerStroke; // Start dragging the newly placed sticker
         } else {
             isDrawing = true;
             currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth);
@@ -220,11 +249,6 @@ function redraw() {
         currentStroke.display(ctx);
     }
 
-    // Draw all placed stickers
-    placedStickers.forEach((sticker) => {
-        sticker.draw(ctx);
-    });
-
     if (!isDrawing && currentToolPreview) {
         currentToolPreview.draw(ctx);
     }
@@ -247,7 +271,6 @@ clearButton.addEventListener("click", () => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         strokes = [];
         redoStack = [];
-        placedStickers = []; // Clear stickers
         currentStroke = null;
     }
 });
@@ -309,38 +332,52 @@ thickMarkerButton.addEventListener("click", () => {
 });
 app.appendChild(thickMarkerButton);
 
+// Sticker class that creates and manages its button
+class Sticker {
+    private stickerImage: string;
+    public stickerButton: HTMLButtonElement;
+
+    constructor(stickerImage: string) {
+        this.stickerImage = stickerImage;
+        this.stickerButton = document.createElement("button");
+        this.stickerButton.textContent = this.stickerImage;
+        this.stickerButton.addEventListener("click", () => {
+            currentSticker = this.stickerImage;
+            currentStickerPreview = new StickerPreview(-10, -10, currentSticker);
+            currentToolPreview = null;
+            canvas.dispatchEvent(new Event("tool-moved"));
+        });
+    }
+}
+
 // Sticker buttons
 let currentSticker: string | null = null;
-const sticker1 = "😁";
-const sticker2 = "😂";
-const sticker3 = "😎";
+let stickers = ["😁", "😂", "😎"];
 
-const stickerButton1 = document.createElement("button");
-stickerButton1.textContent = "sticker1";
-stickerButton1.addEventListener("click", () => {
-    currentSticker = sticker1;
-    currentStickerPreview = new StickerPreview(-10, -10, currentSticker);
-    currentToolPreview = null;
-    canvas.dispatchEvent(new Event("tool-moved"));
-});
-app.appendChild(stickerButton1);
+// Create a container for sticker buttons
+const stickerContainer = document.createElement("div");
+app.appendChild(stickerContainer);
 
-const stickerButton2 = document.createElement("button");
-stickerButton2.textContent = "sticker2";
-stickerButton2.addEventListener("click", () => {
-    currentSticker = sticker2;
-    currentStickerPreview = new StickerPreview(-10, -10, currentSticker);
-    currentToolPreview = null;
-    canvas.dispatchEvent(new Event("tool-moved"));
-});
-app.appendChild(stickerButton2);
 
-const stickerButton3 = document.createElement("button");
-stickerButton3.textContent = "sticker3";
-stickerButton3.addEventListener("click", () => {
-    currentSticker = sticker3;
-    currentStickerPreview = new StickerPreview(-10, -10, currentSticker);
-    currentToolPreview = null;
-    canvas.dispatchEvent(new Event("tool-moved"));
+function createStickerButtons() {
+    stickerContainer.innerHTML = ''; // Clear previous buttons
+    stickers.forEach((sticker) => {
+        const stickerObj = new Sticker(sticker); // Create new Sticker
+        stickerContainer.appendChild(stickerObj.stickerButton); // Append the button from Sticker class
+    });
+}
+
+// Custom sticker button
+const customStickerButton = document.createElement("button");
+customStickerButton.textContent = "Add Custom Sticker";
+customStickerButton.addEventListener("click", () => {
+    const customSticker = prompt("Enter your custom sticker:", "🌟");
+    if (customSticker) {
+        stickers.push(customSticker);
+        createStickerButtons(); // Recreate buttons after adding a new sticker
+    }
 });
-app.appendChild(stickerButton3);
+app.appendChild(customStickerButton);
+
+// Initial setup to create the sticker buttons
+createStickerButtons();
