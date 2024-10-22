@@ -225,12 +225,16 @@ if (ctx) {
     canvas.addEventListener("mouseleave", () => {
         if (draggingSticker) {
             draggingSticker = null; // Stop dragging when leaving canvas
+            
         }
         if (currentStroke) {
             strokes.push(currentStroke);
             currentStroke = null;
         }
         isDrawing = false;
+        currentToolPreview = null;
+        currentStickerPreview = null;
+        canvas.dispatchEvent(new Event("tool-moved"));
     });
 }
 
@@ -263,6 +267,15 @@ canvas.addEventListener("drawing-changed", redraw);
 canvas.addEventListener("tool-moved", redraw);
 
 // Buttons
+
+const editKeyContainer = document.createElement("div");
+editKeyContainer.style.display = "flex";
+editKeyContainer.style.flexDirection = "column";
+editKeyContainer.style.position = "absolute";
+editKeyContainer.style.top = "20px";
+editKeyContainer.style.right = "20px";
+app.appendChild(editKeyContainer);
+
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
 clearButton.addEventListener("click", () => {
@@ -274,7 +287,7 @@ clearButton.addEventListener("click", () => {
         currentStroke = null;
     }
 });
-app.appendChild(clearButton);
+editKeyContainer.appendChild(clearButton);
 
 const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
@@ -290,7 +303,7 @@ undoButton.addEventListener("click", () => {
     }
     canvas.dispatchEvent(drawingChanged);
 });
-app.appendChild(undoButton);
+editKeyContainer.appendChild(undoButton);
 
 let redoStack: Stroke[] = [];
 const redoButton = document.createElement("button");
@@ -307,11 +320,21 @@ redoButton.addEventListener("click", () => {
     }
     canvas.dispatchEvent(drawingChanged);
 });
-app.appendChild(redoButton);
+editKeyContainer.appendChild(redoButton);
 
 let currentLineWidth = 2;
 
 // Tool buttons
+
+// Create a container for tool buttons
+const toolContainer = document.createElement("div");
+toolContainer.style.display = "flex";
+toolContainer.style.flexDirection = "column";
+toolContainer.style.position = "absolute";
+toolContainer.style.bottom = "20px";
+toolContainer.style.right = "20px";
+app.appendChild(toolContainer);
+
 const thinMarkerButton = document.createElement("button");
 thinMarkerButton.textContent = "Thin";
 thinMarkerButton.addEventListener("click", () => {
@@ -320,7 +343,7 @@ thinMarkerButton.addEventListener("click", () => {
     currentSticker = null;
     currentStickerPreview = null;
 });
-app.appendChild(thinMarkerButton);
+toolContainer.appendChild(thinMarkerButton);
 
 const thickMarkerButton = document.createElement("button");
 thickMarkerButton.textContent = "Thick";
@@ -330,7 +353,7 @@ thickMarkerButton.addEventListener("click", () => {
     currentSticker = null;
     currentStickerPreview = null;
 });
-app.appendChild(thickMarkerButton);
+toolContainer.appendChild(thickMarkerButton);
 
 // Sticker class that creates and manages its button
 class Sticker {
@@ -354,17 +377,18 @@ class Sticker {
 let currentSticker: string | null = null;
 let stickers = ["😁", "😂", "😎"];
 
-// Create a container for sticker buttons
-const stickerContainer = document.createElement("div");
-app.appendChild(stickerContainer);
+
 
 
 function createStickerButtons() {
-    stickerContainer.innerHTML = ''; // Clear previous buttons
+    toolContainer.innerHTML = ''; // Clear previous buttons
     stickers.forEach((sticker) => {
         const stickerObj = new Sticker(sticker); // Create new Sticker
-        stickerContainer.appendChild(stickerObj.stickerButton); // Append the button from Sticker class
+        toolContainer.appendChild(stickerObj.stickerButton); // Append the button from Sticker class
     });
+    toolContainer.appendChild(thickMarkerButton);
+    toolContainer.appendChild(thinMarkerButton);
+    toolContainer.appendChild(customStickerButton);
 }
 
 // Custom sticker button
@@ -377,7 +401,7 @@ customStickerButton.addEventListener("click", () => {
         createStickerButtons(); // Recreate buttons after adding a new sticker
     }
 });
-app.appendChild(customStickerButton);
+toolContainer.appendChild(customStickerButton);
 
 // Initial setup to create the sticker buttons
 createStickerButtons();
@@ -407,12 +431,20 @@ exportButton.addEventListener("click", () => {
         for (const stroke of strokes) {
             stroke.display(exportCtx); // Use existing display method
         }
-
-        // Create a link element to trigger the download
-        const link = document.createElement("a");
-        link.download = "drawing.png";
-        link.href = exportCanvas.toDataURL("image/png"); // Get the PNG data URL
-        link.click(); // Trigger the download
+        const fileName: string | null = prompt("Name of file: \n");
+        if (fileName){
+            // Create a link element to trigger the download
+            const link = document.createElement("a");
+            link.download = `${fileName}.png`;
+            link.href = exportCanvas.toDataURL("image/png"); // Get the PNG data URL
+            link.click(); // Trigger the download
+        } else {
+            const link = document.createElement("a");
+            link.download = "untitled.png";
+            link.href = exportCanvas.toDataURL("image/png");
+            link.click();
+        }
+        
     }
 });
-app.appendChild(exportButton);
+editKeyContainer.appendChild(exportButton);
