@@ -112,8 +112,9 @@ class Stroke {
     private lineWidth: number; // Thickness of brush
     private sticker: string | null;
     private position: Point | null;
+    private color: string = "black";
 
-    constructor(initX: number, initY: number, lineWidth: number, sticker: string | null = null) {
+    constructor(initX: number, initY: number, lineWidth: number, color: string, sticker: string | null = null) {
         if (sticker) {
             // If it's a sticker stroke
             this.sticker = sticker;
@@ -125,6 +126,7 @@ class Stroke {
             this.lineWidth = lineWidth;
             this.sticker = null;
             this.position = null;
+            this.color = color;
         }
     }
 
@@ -147,12 +149,13 @@ class Stroke {
             ctx.font = `${fontSize}px sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillStyle = "black";
+            // ctx.fillStyle = this.color;
             ctx.fillText(this.sticker, this.position.x, this.position.y);
             ctx.restore();
         } else if (this.points.length > 0) {
             // Draw a normal stroke
             ctx.lineWidth = this.lineWidth;
+            ctx.strokeStyle = this.color;
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
             for (const point of this.points) {
@@ -165,20 +168,23 @@ class Stroke {
 
 let currentStroke: Stroke | null = null;
 let strokes: Stroke[] = [];
+let currentColor: string = "black";
+
 const drawingChanged = new Event("drawing-changed");
 
 if (ctx) {
     // Start drawing
     canvas.addEventListener("mousedown", (event) => {
         if (currentSticker) {
-            const stickerStroke = new Stroke(event.offsetX, event.offsetY, 0, currentSticker);
+            const stickerStroke = new Stroke(event.offsetX, event.offsetY, 0, currentColor, currentSticker);
             strokes.push(stickerStroke);
             currentSticker = null;
             currentStickerPreview = null;
             draggingSticker = stickerStroke; // Start dragging the newly placed sticker
         } else {
+        
             isDrawing = true;
-            currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth);
+            currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth, currentColor);
         }
         canvas.dispatchEvent(new Event("drawing-changed"));
     });
@@ -448,3 +454,39 @@ exportButton.addEventListener("click", () => {
     }
 });
 editKeyContainer.appendChild(exportButton);
+
+const colorContainer = document.createElement("div");
+colorContainer.style.display = "flex";
+colorContainer.style.flexDirection = "column";
+colorContainer.style.position = "absolute";
+colorContainer.style.left = "20px";
+app.appendChild(colorContainer);
+
+const blackButton = document.createElement("button");
+blackButton.textContent = "Black";
+blackButton.addEventListener("click", () => {
+    currentColor = "black";
+});
+colorContainer.appendChild(blackButton);
+
+const redButton = document.createElement("button");
+redButton.textContent = "Red";
+redButton.addEventListener("click", () => {
+    currentColor = "red";
+});
+colorContainer.appendChild(redButton);
+
+const greenButton = document.createElement("button");
+greenButton.textContent = "Green";
+greenButton.addEventListener("click", () => {
+    currentColor = "green";
+});
+colorContainer.appendChild(greenButton);
+
+const blueButton = document.createElement("button");
+blueButton.textContent = "Blue";
+blueButton.addEventListener("click", () => {
+    currentColor = "blue";
+});
+colorContainer.appendChild(blueButton);
+
