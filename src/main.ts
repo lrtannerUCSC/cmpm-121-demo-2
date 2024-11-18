@@ -172,67 +172,145 @@ let currentColor: string = "black";
 
 const drawingChanged = new Event("drawing-changed");
 
+// pre refactored
+// if (ctx) {
+//     // Start drawing
+//     canvas.addEventListener("mousedown", (event) => {
+//         if (currentSticker) {
+//             const stickerStroke = new Stroke(event.offsetX, event.offsetY, 0, currentColor, currentSticker);
+//             strokes.push(stickerStroke);
+//             currentSticker = null;
+//             currentStickerPreview = null;
+//             draggingSticker = stickerStroke; // Start dragging the newly placed sticker
+//         } else {
+        
+//             isDrawing = true;
+//             currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth, currentColor);
+//         }
+//         canvas.dispatchEvent(new Event("drawing-changed"));
+//     });
+
+    
+//     canvas.addEventListener("mousemove", (event) => {
+//         if (draggingSticker) { // Drag the sticker
+//             draggingSticker.updatePosition(event.offsetX, event.offsetY); // Move the sticker with the mouse
+//             redraw();
+//         } else if (isDrawing) {
+//             currentStroke?.addPoint(event.offsetX, event.offsetY);
+//             redraw();
+//         } else {
+//             if (currentSticker) { // If a sticker is selected
+//                 if (!currentStickerPreview) { // Currently no sticker preview
+//                     currentStickerPreview = new StickerPreview(event.offsetX, event.offsetY, currentSticker);
+//                 } else {
+//                     currentStickerPreview.updatePosition(event.offsetX, event.offsetY); // If already preview, update position
+//                 }
+//             } else if (!currentSticker && !currentToolPreview) { // If no sticker selected and no tool preview
+//                 currentToolPreview = new ToolPreview(event.offsetX, event.offsetY, currentLineWidth);
+//             } else if (currentToolPreview) { // If there is tool preview
+//                 currentToolPreview.updatePosition(event.offsetX, event.offsetY);
+//             }
+
+//             canvas.dispatchEvent(new Event("tool-moved"));
+//         }
+//     });
+
+//     // Stop dragging or drawing
+//     canvas.addEventListener("mouseup", () => {
+//         if (draggingSticker) {
+//             draggingSticker = null; // Stop dragging the sticker
+//         }
+//         if (currentStroke) {
+//             strokes.push(currentStroke);
+//             currentStroke = null;
+//         }
+//         isDrawing = false;
+//         canvas.dispatchEvent(new Event("drawing-changed"));
+//     });
+
+//     // Off canvas
+//     canvas.addEventListener("mouseleave", () => {
+//         if (draggingSticker) {
+//             draggingSticker = null; // Stop dragging when leaving canvas
+            
+//         }
+//         if (currentStroke) {
+//             strokes.push(currentStroke);
+//             currentStroke = null;
+//         }
+//         isDrawing = false;
+//         currentToolPreview = null;
+//         currentStickerPreview = null;
+//         canvas.dispatchEvent(new Event("tool-moved"));
+//     });
+// }
+
+//  post refactored
 if (ctx) {
-    // Start drawing
-    canvas.addEventListener("mousedown", (event) => {
+    // helper function to dispatch a custom event
+    const dispatchCustomEvent = (eventName) => canvas.dispatchEvent(new Event(eventName));
+
+    // start a new stroke or sticker
+    const startDrawingOrSticker = (event) => {
         if (currentSticker) {
+            // place a sticker and start dragging it
             const stickerStroke = new Stroke(event.offsetX, event.offsetY, 0, currentColor, currentSticker);
             strokes.push(stickerStroke);
             currentSticker = null;
             currentStickerPreview = null;
-            draggingSticker = stickerStroke; // Start dragging the newly placed sticker
+            draggingSticker = stickerStroke;
         } else {
-        
+            // start freehand stroke
             isDrawing = true;
             currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth, currentColor);
         }
-        canvas.dispatchEvent(new Event("drawing-changed"));
-    });
+        dispatchCustomEvent("drawing-changed");
+    };
 
-    
-    canvas.addEventListener("mousemove", (event) => {
-        if (draggingSticker) { // Drag the sticker
-            draggingSticker.updatePosition(event.offsetX, event.offsetY); // Move the sticker with the mouse
+    // update position for stickers or strokes
+    const updateDrawingOrPreview = (event) => {
+        if (draggingSticker) {
+            // drag the sticker
+            draggingSticker.updatePosition(event.offsetX, event.offsetY);
             redraw();
         } else if (isDrawing) {
+            // continue drawing a stroke
             currentStroke?.addPoint(event.offsetX, event.offsetY);
             redraw();
         } else {
-            if (currentSticker) { // If a sticker is selected
-                if (!currentStickerPreview) { // Currently no sticker preview
+            // update preview for stickers or tools
+            if (currentSticker) {
+                // update sticker preview
+                if (!currentStickerPreview) {
                     currentStickerPreview = new StickerPreview(event.offsetX, event.offsetY, currentSticker);
                 } else {
-                    currentStickerPreview.updatePosition(event.offsetX, event.offsetY); // If already preview, update position
+                    currentStickerPreview.updatePosition(event.offsetX, event.offsetY);
                 }
-            } else if (!currentSticker && !currentToolPreview) { // If no sticker selected and no tool preview
+            } else if (!currentSticker && !currentToolPreview) {
+                // create tool preview if none exists
                 currentToolPreview = new ToolPreview(event.offsetX, event.offsetY, currentLineWidth);
-            } else if (currentToolPreview) { // If there is tool preview
+            } else if (currentToolPreview) {
+                // update tool preview position
                 currentToolPreview.updatePosition(event.offsetX, event.offsetY);
             }
-
-            canvas.dispatchEvent(new Event("tool-moved"));
+            dispatchCustomEvent("tool-moved");
         }
-    });
+    };
 
-    // Stop dragging or drawing
-    canvas.addEventListener("mouseup", () => {
-        if (draggingSticker) {
-            draggingSticker = null; // Stop dragging the sticker
-        }
+    // stop drawing or dragging
+    const stopDrawingOrDragging = () => {
+        if (draggingSticker) draggingSticker = null;
         if (currentStroke) {
             strokes.push(currentStroke);
             currentStroke = null;
         }
         isDrawing = false;
-        canvas.dispatchEvent(new Event("drawing-changed"));
-    });
+        dispatchCustomEvent("drawing-changed");
+    };
 
-    // Off canvas
-    canvas.addEventListener("mouseleave", () => {
-        if (draggingSticker) {
-            draggingSticker = null; // Stop dragging when leaving canvas
-            
-        }
+    // handle leaving the canvas
+    const handleMouseLeave = () => {
+        draggingSticker = null; // stop dragging stickers
         if (currentStroke) {
             strokes.push(currentStroke);
             currentStroke = null;
@@ -240,8 +318,14 @@ if (ctx) {
         isDrawing = false;
         currentToolPreview = null;
         currentStickerPreview = null;
-        canvas.dispatchEvent(new Event("tool-moved"));
-    });
+        dispatchCustomEvent("tool-moved");
+    };
+
+    // Add event listeners to the canvas
+    canvas.addEventListener("mousedown", startDrawingOrSticker);
+    canvas.addEventListener("mousemove", updateDrawingOrPreview);
+    canvas.addEventListener("mouseup", stopDrawingOrDragging);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
 }
 
 // Redraw the canvas
