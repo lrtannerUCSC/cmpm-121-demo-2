@@ -1,27 +1,48 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
-	"name": "Node.js & TypeScript",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"name": "Node.js & TypeScript with Deno",
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
 	"features": {
 		"ghcr.io/devcontainers-community/features/deno:1": {
 			"version": "latest"
 		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"denoland.vscode-deno",
+				"esbenp.prettier-vscode",
+				"dbaeumer.vscode-eslint",
+				"streetsidesoftware.code-spell-checker",
+				"eamodio.gitlens",
+				"redhat.vscode-yaml",
+				"formulahendry.auto-rename-tag",
+				"github.copilot",
+				"ms-vscode.makefile-tools",
+				"ms-vscode.js-debug-nightly"
+			],
+			"settings": {
+				"deno.enable": true, // Enable Deno for the workspace.
+				"typescript.validate.enable": false, // Disable TypeScript validation since Deno provides its own.
+				"javascript.validate.enable": false, // Disable JS validation since Deno provides its own.
+				"editor.formatOnSave": true, // Format files on save using Prettier.
+				"[typescript]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode"
+				},
+				"[javascript]": {
+					"editor.defaultFormatter": "esbenp.prettier-vscode"
+				},
+				"deno.lint": true, // Enable Deno linting.
+				"deno.unstable": true // Enable Deno's unstable APIs.
+			}
+		}
+	},
+	"forwardPorts": [
+		3000, // Common port for Node.js/Deno apps.
+		8080 // Alternate port for web servers.
+	],
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+	"remoteUser": "node", // Use the node user for development.
+	"remoteEnv": {
+		"DENO_DIR": "/tmp/.deno_cache"
 	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "yarn install",
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }

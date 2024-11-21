@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "sourceMap": true, // Enables source maps for debugging
+        "outDir": "dist" // Output directory for compiled files
+    },
+    "include": [
+        "src/**/*.ts"
+    ]
+}
