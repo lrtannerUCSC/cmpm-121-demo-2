@@ -99,3 +99,24 @@ button:focus-visible {
   filter: drop-shadow(4px 4px 15px black);
   border-radius: 30px;
 }
+
+/* Style for the rectangleButton in the upper-left corner */
+#rectangle-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000; /* Ensure it appears above other elements */
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 500;
+  background-color: #1a1a1a;
+  color: white;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+#rectangle-button:hover {
+  border-color: #646cff;
+}

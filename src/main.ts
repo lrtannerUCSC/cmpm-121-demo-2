@@ -257,7 +257,6 @@ const drawingChanged = new Event("drawing-changed");
 //     });
 // }
 
-
 //  post refactored
 if (ctx) {
   // helper function to dispatch a custom event
