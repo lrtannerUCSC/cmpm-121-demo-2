@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "esnext", // Target ESNext or a modern version
+        "lib": ["esnext", "dom"],
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "outDir": "dist"
+    },
+    "include": ["src/**/*.ts"]
+}
