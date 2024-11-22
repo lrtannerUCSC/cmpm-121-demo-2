@@ -1,16 +1,14 @@
 {
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "Node",
+        "target": "esnext", // Target ESNext or a modern version
+        "lib": ["esnext", "dom"],
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
+        "moduleResolution": "node",
         "resolveJsonModule": true,
-        "sourceMap": true, // Enables source maps for debugging
-        "outDir": "dist" // Output directory for compiled files
+        "sourceMap": true,
+        "outDir": "dist"
     },
-    "include": [
-        "src/**/*.ts"
-    ]
+    "include": ["src/**/*.ts"]
 }

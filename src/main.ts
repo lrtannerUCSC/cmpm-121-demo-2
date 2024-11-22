@@ -1,5 +1,5 @@
 import "./style.css";
-import { RectangleTool } from "./rectangle";
+import { RectangleTool } from "./rectangle.ts";
 
 const APP_NAME = "LT Paint";
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -260,11 +260,11 @@ const drawingChanged = new Event("drawing-changed");
 //  post refactored
 if (ctx) {
   // helper function to dispatch a custom event
-  const dispatchCustomEvent = (eventName) =>
+  const dispatchCustomEvent = (eventName: string) =>
     canvas.dispatchEvent(new Event(eventName));
 
   // start a new stroke or sticker
-  const startDrawingOrSticker = (event) => {
+  const startDrawingOrSticker = (event: MouseEvent) => {
     if (currentSticker) {
       // place a sticker and start dragging it
       const stickerStroke = new Stroke(
@@ -292,7 +292,7 @@ if (ctx) {
   };
 
   // update position for stickers or strokes
-  const updateDrawingOrPreview = (event) => {
+  const updateDrawingOrPreview = (event: MouseEvent) => {
     if (draggingSticker) {
       // drag the sticker
       draggingSticker.updatePosition(event.offsetX, event.offsetY);
@@ -500,7 +500,7 @@ class Sticker {
 
 // Sticker buttons
 let currentSticker: string | null = null;
-let stickers = ["😁", "😂", "😎"];
+const stickers = ["😁", "😂", "😎"];
 
 function createStickerButtons() {
   toolContainer.innerHTML = ""; // Clear previous buttons
